@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NKÚ Extraktor referencií</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    --paper: #eae6d4;
+    --paper-panel: #f4f1e4;
+    --rule: #c6c0a0;
+    --ink: #16241f;
+    --ink-soft: #57645c;
+    --garnet: #7c2635;
+    --garnet-soft: #93384a;
+    --garnet-wash: #ecdad7;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.35), transparent 55%),
+      var(--paper);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    min-height: 100vh;
+  }
+
+  .mono { font-family: "IBM Plex Mono", "SFMono-Regular", monospace; }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ---- Letterhead ------------------------------------------------ */
+  .letterhead { margin-bottom: 34px; }
+  .letterhead-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .letterhead-mark {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .letterhead-mark img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .letterhead-text { flex: 1; min-width: 0; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+  h1.title {
+    font-size: 30px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin: 0 0 16px;
+    max-width: 56ch;
+  }
+  .double-rule {
+    height: 5px;
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+  .api-line {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+  }
+  .api-line span { color: var(--ink); }
+
+  /* ---- Panels (Príloha A / B) ------------------------------------ */
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 30px 0 22px;
+  }
+  @media (max-width: 680px) {
+    .panels { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--paper-panel);
+    border: 1px solid var(--rule);
+    padding: 18px 18px 20px;
+    position: relative;
+  }
+  .panel::before {
+    content: attr(data-exhibit);
+    position: absolute;
+    top: -11px;
+    left: 16px;
+    background: var(--paper);
+    padding: 0 8px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    color: var(--garnet);
+    font-weight: 600;
+  }
+  .panel label {
+    display: block;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 6px 0 10px;
+  }
+  .panel input[type="text"] {
+    width: 100%;
+    border: 1px solid var(--rule);
+    background: #fff;
+    padding: 9px 10px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .panel input[type="text"]:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper-panel);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .btn:hover { background: var(--garnet); border-color: var(--garnet); }
+  .btn.disabled,
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: var(--ink-soft);
+    border-color: var(--ink-soft);
+  }
+  .btn-secondary {
+    background: var(--paper-panel);
+    color: var(--ink);
+  }
+  .btn-secondary:hover { background: var(--garnet-wash); color: var(--garnet); border-color: var(--garnet); }
+
+  .dropzone {
+    border: 1px dashed var(--rule);
+    padding: 22px 10px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .dropzone.dragover { border-color: var(--garnet); background: var(--garnet-wash); color: var(--garnet); }
+  #fileList {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+    word-break: break-word;
+  }
+
+  /* ---- Status box -------------------------------------------------- */
+  .status-box {
+    border-left: 4px solid var(--ink);
+    background: var(--paper-panel);
+    padding: 12px 14px;
+    font-size: 13.5px;
+    margin-bottom: 22px;
+  }
+  .status-box.info { border-left-color: var(--ink-soft); }
+  .status-box.error { border-left-color: var(--garnet); color: var(--garnet); }
+  .status-box.success { border-left-color: var(--ink); }
+  .hidden { display: none !important; }
+
+  /* ---- Section headers --------------------------------------------- */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 40px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .section-header h2::before {
+    content: "";
+    display: inline-block;
+    width: 9px;
+    height: 14px;
+    background: var(--garnet);
+  }
+  .section-header .count {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--ink-soft);
+    font-weight: 400;
+    font-size: 14px;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--garnet);
+    cursor: pointer;
+    padding: 0;
+  }
+  .link-btn:hover { text-decoration: underline; }
+
+  .export-row { display: flex; gap: 8px; }
+  .export-row .btn { width: auto; padding: 7px 14px; font-size: 11px; }
+
+  /* ---- Ledger table -------------------------------------------------- */
+  .ledger {
+    border: 1px solid var(--rule);
+    background: var(--paper-panel);
+    overflow-x: auto;
+    margin-bottom: 10px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    text-align: left;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--ink);
+    padding: 9px 12px;
+    font-weight: 500;
+  }
+  tbody td {
+    padding: 9px 12px;
+    vertical-align: top;
+    border-top: 1px solid var(--rule);
+  }
+  tbody tr:nth-child(even) { background: rgba(0,0,0,0.018); }
+  tbody tr:hover { background: var(--garnet-wash); }
+  .ledger-idx {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--ink-soft);
+    text-align: right;
+    width: 30px;
+  }
+  .cell-source {
+    max-width: 240px;
+    white-space: normal;
+    word-break: break-word;
+    font-size: 12.5px;
+    color: var(--ink);
+  }
+  .cell-source a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-underline-offset: 2px;
+  }
+  .cell-source a:hover { color: var(--garnet); text-decoration-color: var(--garnet); }
+  .cell-source .no-link { color: var(--ink-soft); font-style: italic; }
+  .cell-cpt {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .cell-cpt a {
+    color: var(--garnet);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .cell-cpt a:hover { text-decoration: underline; }
+  .cell-pattern {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .cell-match {
+    font-weight: 600;
+    color: var(--garnet);
+    white-space: nowrap;
+    background: linear-gradient(transparent 62%, var(--garnet-wash) 62%);
+    padding-left: 2px;
+  }
+  .cell-context { color: var(--ink); }
+  .cell-page {
+    font-family: "IBM Plex Mono", monospace;
+    text-align: center;
+    color: var(--ink-soft);
+  }
+  .empty-row td {
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    font-style: italic;
+    padding: 16px 12px;
+  }
+
+  /* ---- History table specifics --------------------------------------- */
+  .hist-url {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+  }
+  .hist-date {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .hist-count { font-family: "IBM Plex Mono", monospace; text-align: center; }
+
+  .status-done { display: inline-flex; align-items: center; gap: 6px; }
+  .stamp {
+    display: inline-block;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--garnet-soft);
+    border: 1.5px solid var(--garnet-soft);
+    border-radius: 3px;
+    padding: 1px 6px;
+    transform: rotate(-7deg);
+    mix-blend-mode: multiply;
+    opacity: 0.85;
+    white-space: nowrap;
+  }
+  .status-error-text { color: var(--garnet); font-style: italic; font-size: 12px; }
+
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .tab-btn {
+    font-family: "Source Serif 4", serif;
+    font-size: 14px;
+    background: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    padding: 9px 16px;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .tab-btn.active {
+    color: var(--ink);
+    font-weight: 600;
+    border-color: var(--rule);
+    background: var(--paper-panel);
+    border-radius: 3px 3px 0 0;
+  }
+  .tab-panel.hidden { display: none; }
+  .hint-text {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .nku-hl {
+    background: var(--garnet-wash);
+    color: var(--garnet);
+    font-weight: 600;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+
+  /* ---- Trend chart ---------------------------------------------------- */
+  .trend-panel {
+    border: 1px solid var(--rule);
+    background: var(--paper-panel);
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .trend-panel canvas { max-width: 100%; }
+  .trend-empty {
+    color: var(--ink-soft);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .tablet-panel {
+    margin: 30px 0 22px;
+    border: 1px solid var(--rule);
+    background: var(--paper-panel);
+  }
+  .tablet-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: none;
+    border: none;
+    padding: 13px 16px;
+    cursor: pointer;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .tablet-toggle:hover { color: var(--garnet); }
+  .tablet-toggle .chevron { transition: transform 0.15s ease; color: var(--ink-soft); }
+  .tablet-toggle[aria-expanded="true"] .chevron { transform: rotate(90deg); }
+  .tablet-body {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 4px 16px 18px;
+    border-top: 1px dashed var(--rule);
+  }
+  .tablet-body.hidden { display: none; }
+  .tablet-qr-box {
+    flex-shrink: 0;
+    background: #fff;
+    border: 1px solid var(--rule);
+    padding: 8px;
+    width: 116px;
+    height: 116px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tablet-qr-box img { width: 100%; height: 100%; display: block; }
+  .tablet-qr-box .qr-msg {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+  .tablet-info { font-size: 13px; color: var(--ink-soft); max-width: 46ch; }
+  .tablet-info .tablet-url {
+    display: block;
+    margin-top: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  footer.note {
+    margin-top: 50px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-family: "IBM Plex Mono", monospace;
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="letterhead">
+    <div class="letterhead-top">
+      <div class="letterhead-mark">
+        <img src="assets/nku-logo.png" alt="Znak NKÚ SR" />
+      </div>
+      <div class="letterhead-text">
+        <p class="eyebrow">Najvyšší kontrolný úrad SR &nbsp;·&nbsp; register dôvodových správ</p>
+        <h1 class="title">Extraktor referencií</h1>
+        <p class="subtitle">Vyhľadanie zmienok o Najvyššom kontrolnom úrade SR v dôvodových správach.</p>
+      </div>
+    </div>
+    <div class="double-rule"></div>
+    <div class="api-line">API pripojenie: <span id="apiBaseLabel">http://localhost:8000</span></div>
+  </div>
+
+  <div class="tab-bar">
+    <button id="tabBtnNrsr" class="tab-btn active">NRSR schôdze</button>
+    <button id="tabBtnSlovlex" class="tab-btn">Slov-Lex — Predbežné informácie</button>
+  </div>
+
+  <div id="nrsrTab" class="tab-panel">
+  <div class="panels">
+    <!-- URL input -->
+    <div class="panel" data-exhibit="Príloha A — URL">
+      <label for="urlInput">URL parlamentnej schôdze (nrsr.sk)</label>
+      <input id="urlInput" type="text" placeholder="https://www.nrsr.sk/web/..." />
+      <button id="scrapeBtn" class="btn">Stiahnuť a analyzovať</button>
+    </div>
+
+    <!-- File upload -->
+    <div class="panel" data-exhibit="Príloha B — súbory">
+      <label>Alebo nahrajte súbory manuálne</label>
+      <div id="dropzone" class="dropzone">
+        Presuňte súbory sem (.pdf, .docx, .rtf) alebo kliknite
+      </div>
+      <input id="fileInput" type="file" multiple accept=".pdf,.docx,.rtf" class="hidden" />
+      <div id="fileList"></div>
+      <button id="uploadBtn" class="btn btn-secondary">Nahrať a analyzovať</button>
+    </div>
+  </div>
+
+  <div id="statusBox" class="status-box hidden"></div>
+
+  <div id="resultsSection" class="hidden">
+    <div class="section-header">
+      <h2>Výsledky <span class="count">(<span id="resultCount">0</span>)</span></h2>
+      <div class="export-row">
+        <button id="exportXlsxBtn" class="btn">Export XLSX</button>
+        <button id="exportCsvBtn" class="btn btn-secondary">Export CSV</button>
+      </div>
+    </div>
+    <div class="ledger">
+      <table>
+        <thead>
+          <tr>
+            <th class="ledger-idx">č.</th>
+            <th>Zdroj</th>
+            <th>Č. ČPT</th>
+            <th>Vzor</th>
+            <th>Zhoda</th>
+            <th>Kontext</th>
+            <th>Strana</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2>Trend zhôd</h2>
+  </div>
+  <div class="trend-panel">
+    <canvas id="trendChart" height="90"></canvas>
+    <div id="trendEmpty" class="trend-empty hidden">Zatiaľ nie je dosť dokončených behov na zobrazenie trendu.</div>
+  </div>
+
+  <div class="section-header">
+    <h2>História behov</h2>
+    <button id="clearHistoryBtn" class="link-btn">Vymazať históriu</button>
+  </div>
+  <div class="ledger">
+    <table>
+      <thead>
+        <tr>
+          <th>Dátum</th>
+          <th>URL</th>
+          <th>Stav</th>
+          <th class="hist-count">Dokumenty</th>
+          <th class="hist-count">Zhody</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="historyBody">
+        <tr class="empty-row"><td colspan="6">Zatiaľ žiadne behy.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div><!-- /#nrsrTab -->
+
+  <div id="slovlexTab" class="tab-panel hidden">
+    <div class="panels">
+      <div class="panel" data-exhibit="Príloha C — Slov-Lex">
+        <label for="slovlexDaysInput">Skontrolovať záznamy za posledných koľko dní?</label>
+        <input id="slovlexDaysInput" type="number" min="1" max="3660" value="31" />
+        <button id="slovlexScanBtn" class="btn">Spustiť kontrolu</button>
+        <p class="hint-text">
+          Appka si stiahne zoznam Predbežných informácií zo Slov-Lexu za zvolené obdobie
+          priamo z jeho vlastného API a prehľadá názvy aj priložené dokumenty (DOCX/PDF/RTF)
+          na zmienky o NKÚ vo všetkých tvaroch — nespolieha sa na vstavané vyhľadávanie na stránke.
+        </p>
+      </div>
+    </div>
+
+    <div id="slovlexStatusBox" class="status-box hidden"></div>
+
+    <div id="slovlexResultsSection" class="hidden">
+      <div class="section-header">
+        <h2>Výsledky <span class="count">(<span id="slovlexResultCount">0</span>)</span></h2>
+        <div class="export-row">
+          <button id="slovlexExportXlsxBtn" class="btn">Export XLSX</button>
+          <button id="slovlexExportCsvBtn" class="btn btn-secondary">Export CSV</button>
+        </div>
+      </div>
+      <div class="ledger">
+        <table>
+          <thead>
+            <tr>
+              <th class="ledger-idx">č.</th>
+              <th>Záznam</th>
+              <th>Vzor</th>
+              <th>Zhoda</th>
+              <th>Kontext</th>
+              <th>Strana</th>
+            </tr>
+          </thead>
+          <tbody id="slovlexResultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>História kontrol</h2>
+      <button id="slovlexClearHistoryBtn" class="link-btn">Vymazať históriu</button>
+    </div>
+    <div class="ledger">
+      <table>
+        <thead>
+          <tr>
+            <th>Dátum</th>
+            <th>Obdobie</th>
+            <th>Stav</th>
+            <th class="hist-count">Skontrolované</th>
+            <th class="hist-count">Zhody</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="slovlexHistoryBody">
+          <tr class="empty-row"><td colspan="6">Zatiaľ žiadne kontroly.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div><!-- /#slovlexTab -->
+
+  <div class="tablet-panel">
+    <button id="tabletToggle" class="tablet-toggle" aria-expanded="false">
+      <span>📱 Pripojiť tablet cez Wi-Fi</span>
+      <span class="chevron">›</span>
+    </button>
+    <div id="tabletBody" class="tablet-body hidden">
+      <div id="tabletQrBox" class="tablet-qr-box">
+        <span class="qr-msg">Načítavam...</span>
+      </div>
+      <div class="tablet-info">
+        Na tablete otvorte fotoaparát (alebo skener QR kódov) a namierte na tento kód —
+        appka sa otvorí rovno v prehliadači. Tablet aj tento počítač musia byť v tej istej Wi-Fi sieti.
+        <span id="tabletUrlText" class="tablet-url"></span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">spis vedený automaticky &nbsp;·&nbsp; NKÚ SR nástroj na interné použitie &nbsp;·&nbsp; zostavil SP</footer>
+</div>
+
+<script>
+// Ak je stránka otvorená priamo dvojklikom (súbor na disku), použije sa
+// server na tomto počítači (localhost). Ak je stránka otvorená cez sieť
+// (napr. z tabletu na adrese http://192.168.x.x:8000), použije sa presne
+// tá istá adresa, odkiaľ sa appka práve načítala.
+const API_BASE = (location.protocol === "http:" || location.protocol === "https:")
+  ? location.origin
+  : "http://localhost:8000";
+document.getElementById("apiBaseLabel").textContent = API_BASE;
+
+// --- Prepínanie záložiek NRSR / Slov-Lex ---------------------------------
+const tabBtnNrsr = document.getElementById("tabBtnNrsr");
+const tabBtnSlovlex = document.getElementById("tabBtnSlovlex");
+const nrsrTab = document.getElementById("nrsrTab");
+const slovlexTab = document.getElementById("slovlexTab");
+
+function activateTab(which) {
+  const isNrsr = which === "nrsr";
+  nrsrTab.classList.toggle("hidden", !isNrsr);
+  slovlexTab.classList.toggle("hidden", isNrsr);
+  tabBtnNrsr.classList.toggle("active", isNrsr);
+  tabBtnSlovlex.classList.toggle("active", !isNrsr);
+}
+tabBtnNrsr.addEventListener("click", () => activateTab("nrsr"));
+tabBtnSlovlex.addEventListener("click", () => activateTab("slovlex"));
+
+let currentMatches = [];
+let selectedFiles = [];
+
+const statusBox = document.getElementById("statusBox");
+const resultsSection = document.getElementById("resultsSection");
+const resultsBody = document.getElementById("resultsBody");
+const resultCount = document.getElementById("resultCount");
+
+function showStatus(message, kind = "info") {
+  statusBox.classList.remove("hidden", "info", "error", "success");
+  statusBox.classList.add(kind);
+  statusBox.textContent = message;
+}
+
+// Zdrojový popis vyzerá napr. "Dôvodová správa (tlač: https://www.nrsr.sk/...&ID=1077)".
+// Vytiahneme z neho čitateľný názov, samotné URL tlače (ČPT) a jej číslo,
+// aby sa dali zobraziť ako poriadny odkaz namiesto orezaného textu.
+function parseSourceInfo(source) {
+  const info = { label: source || "", cptUrl: null, cptNumber: null };
+  if (!source) return info;
+
+  const cptMatch = source.match(/\(tlač:\s*(\S+)\)\s*$/i);
+  if (cptMatch) {
+    info.label = source.slice(0, cptMatch.index).trim();
+    info.cptUrl = cptMatch[1];
+    const idMatch = info.cptUrl.match(/[?&]ID=(\d+)/i);
+    if (idMatch) info.cptNumber = idMatch[1];
+  }
+  return info;
+}
+
+function renderMatches(matches) {
+  currentMatches = matches;
+  resultsBody.innerHTML = "";
+  resultCount.textContent = matches.length;
+
+  if (matches.length === 0) {
+    resultsSection.classList.add("hidden");
+    return;
+  }
+
+  matches.forEach((m, i) => {
+    const tr = document.createElement("tr");
+    const info = parseSourceInfo(m.source);
+
+    const sourceHtml = m.source_url
+      ? `<a href="${escapeHtml(m.source_url)}" target="_blank" rel="noopener">${escapeHtml(info.label)}</a>`
+      : `<span class="no-link" title="${escapeHtml(m.source)}">${escapeHtml(info.label)}</span>`;
+
+    const cptHtml = info.cptNumber
+      ? (info.cptUrl
+          ? `<a href="${escapeHtml(info.cptUrl)}" target="_blank" rel="noopener">tlač ${escapeHtml(info.cptNumber)}</a>`
+          : escapeHtml(info.cptNumber))
+      : "-";
+
+    tr.innerHTML = `
+      <td class="ledger-idx">${i + 1}</td>
+      <td class="cell-source">${sourceHtml}</td>
+      <td class="cell-cpt">${cptHtml}</td>
+      <td class="cell-pattern">${escapeHtml(m.pattern_matched)}</td>
+      <td class="cell-match">${escapeHtml(m.matched_text)}</td>
+      <td class="cell-context">${highlightContext(m.context, m.matched_text)}</td>
+      <td class="cell-page">${m.page_hint ?? "-"}</td>
+    `;
+    resultsBody.appendChild(tr);
+  });
+
+  resultsSection.classList.remove("hidden");
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+// Zvýrazní prvý výskyt matched_text v context ako <mark>, nezávisle od
+// veľkosti písmen (context.indexOf hľadá presnú zhodu, čo je fajn, keďže
+// matched_text pochádza priamo z regexu, ktorý ho v context našiel).
+function highlightContext(context, matchedText) {
+  if (!context) return "";
+  if (!matchedText) return escapeHtml(context);
+  const idx = context.indexOf(matchedText);
+  if (idx === -1) return escapeHtml(context); // fallback, nemalo by nastať
+  const before = context.slice(0, idx);
+  const match = context.slice(idx, idx + matchedText.length);
+  const after = context.slice(idx + matchedText.length);
+  return `${escapeHtml(before)}<mark class="nku-hl">${escapeHtml(match)}</mark>${escapeHtml(after)}`;
+}
+
+async function handleScrapeResponse(resp) {
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(body.detail || `Chyba servera (${resp.status})`);
+  }
+  return resp.json();
+}
+
+const scrapeBtn = document.getElementById("scrapeBtn");
+const POLL_INTERVAL_MS = 1500;
+
+function formatDuration(totalSeconds) {
+  if (totalSeconds == null) return null;
+  const s = Math.max(0, Math.round(totalSeconds));
+  const mins = Math.floor(s / 60);
+  const secs = s % 60;
+  if (mins === 0) return `${secs} s`;
+  return `${mins} min ${secs}s`;
+}
+
+function formatProgress(status) {
+  if (status.total > 0) {
+    const pct = Math.round((status.current / status.total) * 100);
+    const where = status.location ? ` — ${status.location}` : "";
+    const remaining = formatDuration(status.estimated_seconds_remaining);
+    const eta = remaining ? `, zostáva približne ${remaining}` : "";
+    return `Spracúvam ${status.current}/${status.total} (${pct} %)${where}${eta}`;
+  }
+  return "Sťahujem stránku a hľadám dokumenty na spracovanie...";
+}
+
+function pollScrapeJob(jobId) {
+  return new Promise((resolve, reject) => {
+    const tick = async () => {
+      let resp;
+      try {
+        resp = await fetch(`${API_BASE}/api/scrape/status/${jobId}`);
+      } catch (err) {
+        reject(new Error(`Nepodarilo sa spojiť so serverom (${err.message}).`));
+        return;
+      }
+
+      let status;
+      try {
+        status = await handleScrapeResponse(resp);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+
+      if (status.status === "running") {
+        showStatus(formatProgress(status), "info");
+        setTimeout(tick, POLL_INTERVAL_MS);
+      } else if (status.status === "done") {
+        resolve(status.result);
+      } else {
+        reject(new Error(status.error || "Neznáma chyba počas spracovania."));
+      }
+    };
+    tick();
+  });
+}
+
+// Nájde najnovší úspešne dokončený beh s presne rovnakou URL v histórii
+// (historyEntries sa načíta pri štarte appky cez loadHistory() a
+// dopĺňa po každom behu, takže tu je vždy aktuálna).
+function findDuplicateRun(url) {
+  return historyEntries.find((e) => e.status === "done" && e.url === url) || null;
+}
+
+scrapeBtn.addEventListener("click", async () => {
+  const url = document.getElementById("urlInput").value.trim();
+  if (!url) {
+    showStatus("Zadajte URL adresu.", "error");
+    return;
+  }
+
+  const duplicate = findDuplicateRun(url);
+  if (duplicate) {
+    const when = formatHistoryDate(duplicate.started_at);
+    const proceed = confirm(
+      `Túto istú URL si už kontrolovala ${when} (${duplicate.matches_count ?? "?"} zhôd). ` +
+      `Chceš ju napriek tomu spustiť znova?`
+    );
+    if (!proceed) return;
+  }
+
+  scrapeBtn.disabled = true;
+  scrapeBtn.classList.add("disabled");
+  renderMatches([]); // clear any leftover results from a previous run before starting a new one
+  showStatus("Spúšťam analýzu...", "info");
+
+  try {
+    const startResp = await fetch(`${API_BASE}/api/scrape/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    const { job_id } = await handleScrapeResponse(startResp);
+    const data = await pollScrapeJob(job_id);
+    showStatus(
+      `Spracované: ${data.documents_processed.length}/${data.document_count} dokumentov. ` +
+      `Zlyhalo: ${data.documents_failed.length}. Nájdených zhôd: ${data.matches.length}.`,
+      data.matches.length > 0 ? "success" : "info"
+    );
+    renderMatches(data.matches);
+  } catch (err) {
+    showStatus(`Chyba: ${err.message}`, "error");
+  } finally {
+    scrapeBtn.disabled = false;
+    scrapeBtn.classList.remove("disabled");
+    loadHistory();
+  }
+});
+
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+const fileListEl = document.getElementById("fileList");
+
+dropzone.addEventListener("click", () => fileInput.click());
+dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  selectedFiles = Array.from(e.dataTransfer.files);
+  renderFileList();
+});
+fileInput.addEventListener("change", () => {
+  selectedFiles = Array.from(fileInput.files);
+  renderFileList();
+});
+
+function renderFileList() {
+  fileListEl.textContent = selectedFiles.length
+    ? selectedFiles.map((f) => f.name).join(", ")
+    : "";
+}
+
+document.getElementById("uploadBtn").addEventListener("click", async () => {
+  if (selectedFiles.length === 0) {
+    showStatus("Vyberte aspoň jeden súbor.", "error");
+    return;
+  }
+  renderMatches([]); // clear any leftover results from a previous run before starting a new one
+  showStatus("Nahrávam a analyzujem súbory...", "info");
+  const formData = new FormData();
+  selectedFiles.forEach((f) => formData.append("files", f));
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/upload`, { method: "POST", body: formData });
+    const data = await handleScrapeResponse(resp);
+    showStatus(
+      `Spracované: ${data.documents_processed.length}/${data.document_count} súborov. ` +
+      `Zlyhalo: ${data.documents_failed.length}. Nájdených zhôd: ${data.matches.length}.`,
+      data.matches.length > 0 ? "success" : "info"
+    );
+    renderMatches(data.matches);
+  } catch (err) {
+    showStatus(`Chyba: ${err.message}`, "error");
+  }
+});
+
+async function exportAs(format) {
+  if (currentMatches.length === 0) {
+    showStatus("Žiadne výsledky na export.", "error");
+    return;
+  }
+  try {
+    const resp = await fetch(`${API_BASE}/api/export`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matches: currentMatches, file_format: format }),
+    });
+    if (!resp.ok) throw new Error(`Export zlyhal (${resp.status})`);
+    const blob = await resp.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = format === "xlsx" ? "nku_matches.xlsx" : "nku_matches.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (err) {
+    showStatus(`Chyba pri exporte: ${err.message}`, "error");
+  }
+}
+
+document.getElementById("exportXlsxBtn").addEventListener("click", () => exportAs("xlsx"));
+document.getElementById("exportCsvBtn").addEventListener("click", () => exportAs("csv"));
+
+// --- História behov -----------------------------------------------------
+const historyBody = document.getElementById("historyBody");
+let historyEntries = [];
+
+function formatHistoryDate(isoString) {
+  if (!isoString) return "-";
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  return d.toLocaleString("sk-SK", { dateStyle: "short", timeStyle: "short" });
+}
+
+function statusBadge(status) {
+  if (status === "done") return `<span class="status-done">hotovo <span class="stamp">✓ Overené</span></span>`;
+  if (status === "error") return `<span class="status-error-text">chyba</span>`;
+  return escapeHtml(status);
+}
+
+function renderHistory() {
+  historyBody.innerHTML = "";
+
+  if (historyEntries.length === 0) {
+    historyBody.innerHTML = `<tr class="empty-row"><td colspan="6">Zatiaľ žiadne behy.</td></tr>`;
+    return;
+  }
+
+  historyEntries.forEach((entry, idx) => {
+    const tr = document.createElement("tr");
+    const docCount = entry.document_count != null
+      ? `${entry.processed_count ?? "-"}/${entry.document_count}`
+      : "-";
+    const matchCount = entry.matches_count != null ? entry.matches_count : "-";
+
+    tr.innerHTML = `
+      <td class="hist-date">${formatHistoryDate(entry.started_at)}</td>
+      <td class="hist-url" title="${escapeHtml(entry.url)}">${escapeHtml(entry.url)}</td>
+      <td>${statusBadge(entry.status)}</td>
+      <td class="hist-count">${docCount}</td>
+      <td class="hist-count">${matchCount}</td>
+      <td>
+        ${entry.status === "done"
+          ? `<button data-idx="${idx}" class="viewHistoryBtn link-btn">Zobraziť</button>`
+          : `<span class="hist-date" title="${escapeHtml(entry.error || "")}">zlyhalo</span>`}
+      </td>
+    `;
+    historyBody.appendChild(tr);
+  });
+
+  historyBody.querySelectorAll(".viewHistoryBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const entry = historyEntries[Number(btn.dataset.idx)];
+      if (!entry || !entry.matches) return;
+      showStatus(
+        `Zobrazujem uložený výsledok z ${formatHistoryDate(entry.started_at)}: ` +
+        `${entry.processed_count ?? "-"}/${entry.document_count ?? "-"} dokumentov, ${entry.matches.length} zhôd.`,
+        "info"
+      );
+      renderMatches(entry.matches);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+}
+
+let trendChartInstance = null;
+
+// Graf počtu zhôd naprieč dokončenými behmi v čase (najstarší -> najnovší).
+// Behy so status "error" sa do grafu nezarátavajú, keďže nemajú matches_count.
+function renderTrendChart(entries) {
+  const canvas = document.getElementById("trendChart");
+  const emptyEl = document.getElementById("trendEmpty");
+  const done = entries
+    .filter((e) => e.status === "done" && e.matches_count != null)
+    .slice() // loadHistory dáva najnovšie prvé -- pre graf chceme opačné poradie
+    .reverse();
+
+  if (done.length < 2) {
+    canvas.classList.add("hidden");
+    emptyEl.classList.remove("hidden");
+    if (trendChartInstance) {
+      trendChartInstance.destroy();
+      trendChartInstance = null;
+    }
+    return;
+  }
+  canvas.classList.remove("hidden");
+  emptyEl.classList.add("hidden");
+
+  const labels = done.map((e) => formatHistoryDate(e.started_at));
+  const data = done.map((e) => e.matches_count);
+
+  if (trendChartInstance) {
+    trendChartInstance.data.labels = labels;
+    trendChartInstance.data.datasets[0].data = data;
+    trendChartInstance.update();
+    return;
+  }
+
+  trendChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Nájdených zhôd",
+        data,
+        borderColor: "#7c2635",
+        backgroundColor: "rgba(124, 38, 53, 0.12)",
+        tension: 0.25,
+        fill: true,
+        pointRadius: 3,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+      },
+    },
+  });
+}
+
+async function loadHistory() {
+  try {
+    const resp = await fetch(`${API_BASE}/api/history`);
+    if (!resp.ok) return; // non-fatal -- history is a convenience, not core functionality
+    historyEntries = await resp.json();
+    renderHistory();
+    renderTrendChart(historyEntries);
+  } catch (err) {
+    // Silently ignore -- e.g. backend not running yet on initial page load.
+  }
+}
+
+document.getElementById("clearHistoryBtn").addEventListener("click", async () => {
+  if (!confirm("Naozaj vymazať celú históriu behov? Túto akciu nie je možné vrátiť späť.")) {
+    return;
+  }
+  try {
+    const resp = await fetch(`${API_BASE}/api/history`, { method: "DELETE" });
+    if (!resp.ok) throw new Error(`Vymazanie zlyhalo (${resp.status})`);
+    historyEntries = [];
+    renderHistory();
+    renderTrendChart(historyEntries);
+  } catch (err) {
+    showStatus(`Chyba pri mazaní histórie: ${err.message}`, "error");
+  }
+});
+
+loadHistory();
+
+// =========================================================================
+// Slov-Lex — Predbežné informácie (samostatná záložka, vlastné API)
+// =========================================================================
+const slovlexStatusBox = document.getElementById("slovlexStatusBox");
+const slovlexResultsSection = document.getElementById("slovlexResultsSection");
+const slovlexResultsBody = document.getElementById("slovlexResultsBody");
+const slovlexResultCount = document.getElementById("slovlexResultCount");
+const slovlexScanBtn = document.getElementById("slovlexScanBtn");
+const slovlexDaysInput = document.getElementById("slovlexDaysInput");
+const slovlexHistoryBody = document.getElementById("slovlexHistoryBody");
+let currentSlovlexMatches = [];
+let slovlexHistoryEntries = [];
+
+function showSlovlexStatus(message, kind = "info") {
+  slovlexStatusBox.classList.remove("hidden", "info", "error", "success");
+  slovlexStatusBox.classList.add(kind);
+  slovlexStatusBox.textContent = message;
+}
+
+function renderSlovlexMatches(matches) {
+  currentSlovlexMatches = matches;
+  slovlexResultsBody.innerHTML = "";
+  slovlexResultCount.textContent = matches.length;
+
+  if (matches.length === 0) {
+    slovlexResultsSection.classList.add("hidden");
+    return;
+  }
+
+  matches.forEach((m, i) => {
+    const tr = document.createElement("tr");
+    const sourceHtml = m.source_url
+      ? `<a href="${escapeHtml(m.source_url)}" target="_blank" rel="noopener">${escapeHtml(m.source)}</a>`
+      : `<span class="no-link">${escapeHtml(m.source)}</span>`;
+
+    tr.innerHTML = `
+      <td class="ledger-idx">${i + 1}</td>
+      <td class="cell-source">${sourceHtml}</td>
+      <td class="cell-pattern">${escapeHtml(m.pattern_matched)}</td>
+      <td class="cell-match">${escapeHtml(m.matched_text)}</td>
+      <td class="cell-context">${highlightContext(m.context, m.matched_text)}</td>
+      <td class="cell-page">${m.page_hint ?? "-"}</td>
+    `;
+    slovlexResultsBody.appendChild(tr);
+  });
+
+  slovlexResultsSection.classList.remove("hidden");
+}
+
+function formatSlovlexProgress(status) {
+  if (status.total > 0) {
+    const pct = Math.round((status.current / status.total) * 100);
+    const where = status.location ? ` — ${status.location}` : "";
+    const remaining = formatDuration(status.estimated_seconds_remaining);
+    const eta = remaining ? `, zostáva približne ${remaining}` : "";
+    return `Kontrolujem ${status.current}/${status.total} záznamov (${pct} %)${where}${eta}`;
+  }
+  return status.location || "Hľadám záznamy na Slov-Lexe...";
+}
+
+function pollSlovlexJob(jobId) {
+  return new Promise((resolve, reject) => {
+    const tick = async () => {
+      let resp;
+      try {
+        resp = await fetch(`${API_BASE}/api/slovlex/scan/status/${jobId}`);
+      } catch (err) {
+        reject(new Error(`Nepodarilo sa spojiť so serverom (${err.message}).`));
+        return;
+      }
+
+      let status;
+      try {
+        status = await handleScrapeResponse(resp);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+
+      if (status.status === "running") {
+        showSlovlexStatus(formatSlovlexProgress(status), "info");
+        setTimeout(tick, POLL_INTERVAL_MS);
+      } else if (status.status === "done") {
+        resolve(status.result);
+      } else {
+        reject(new Error(status.error || "Neznáma chyba počas spracovania."));
+      }
+    };
+    tick();
+  });
+}
+
+slovlexScanBtn.addEventListener("click", async () => {
+  const daysBack = parseInt(slovlexDaysInput.value, 10);
+  if (!daysBack || daysBack <= 0) {
+    showSlovlexStatus("Zadajte kladný počet dní.", "error");
+    return;
+  }
+
+  slovlexScanBtn.disabled = true;
+  slovlexScanBtn.classList.add("disabled");
+  renderSlovlexMatches([]);
+  showSlovlexStatus("Spúšťam kontrolu...", "info");
+
+  try {
+    const startResp = await fetch(`${API_BASE}/api/slovlex/scan/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days_back: daysBack }),
+    });
+    const { job_id } = await handleScrapeResponse(startResp);
+    const data = await pollSlovlexJob(job_id);
+    showSlovlexStatus(
+      `Skontrolovaných záznamov: ${data.materials_checked}. ` +
+      `So zmienkou o NKÚ: ${data.materials_with_matches}. ` +
+      `Nájdených zhôd spolu: ${data.matches.length}.`,
+      data.matches.length > 0 ? "success" : "info"
+    );
+    renderSlovlexMatches(data.matches);
+  } catch (err) {
+    showSlovlexStatus(`Chyba: ${err.message}`, "error");
+  } finally {
+    slovlexScanBtn.disabled = false;
+    slovlexScanBtn.classList.remove("disabled");
+    loadSlovlexHistory();
+  }
+});
+
+async function exportSlovlexAs(format) {
+  if (currentSlovlexMatches.length === 0) {
+    showSlovlexStatus("Žiadne výsledky na export.", "error");
+    return;
+  }
+  try {
+    // Rovnaký /api/export endpoint ako pri NRSR -- pracuje len so
+    // zoznamom MatchResult, je appke/zdroju jedno.
+    const resp = await fetch(`${API_BASE}/api/export`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matches: currentSlovlexMatches, file_format: format }),
+    });
+    if (!resp.ok) throw new Error(`Export zlyhal (${resp.status})`);
+    const blob = await resp.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = format === "xlsx" ? "slovlex_matches.xlsx" : "slovlex_matches.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (err) {
+    showSlovlexStatus(`Chyba pri exporte: ${err.message}`, "error");
+  }
+}
+document.getElementById("slovlexExportXlsxBtn").addEventListener("click", () => exportSlovlexAs("xlsx"));
+document.getElementById("slovlexExportCsvBtn").addEventListener("click", () => exportSlovlexAs("csv"));
+
+function renderSlovlexHistory() {
+  slovlexHistoryBody.innerHTML = "";
+
+  if (slovlexHistoryEntries.length === 0) {
+    slovlexHistoryBody.innerHTML = `<tr class="empty-row"><td colspan="6">Zatiaľ žiadne kontroly.</td></tr>`;
+    return;
+  }
+
+  slovlexHistoryEntries.forEach((entry, idx) => {
+    const tr = document.createElement("tr");
+    const checkedCount = entry.materials_checked ?? "-";
+    const matchCount = entry.matches_count != null ? entry.matches_count : "-";
+
+    tr.innerHTML = `
+      <td class="hist-date">${formatHistoryDate(entry.started_at)}</td>
+      <td>posledných ${entry.days_back} dní</td>
+      <td>${statusBadge(entry.status)}</td>
+      <td class="hist-count">${checkedCount}</td>
+      <td class="hist-count">${matchCount}</td>
+      <td>
+        ${entry.status === "done"
+          ? `<button data-idx="${idx}" class="viewSlovlexHistoryBtn link-btn">Zobraziť</button>`
+          : `<span class="hist-date" title="${escapeHtml(entry.error || "")}">zlyhalo</span>`}
+      </td>
+    `;
+    slovlexHistoryBody.appendChild(tr);
+  });
+
+  slovlexHistoryBody.querySelectorAll(".viewSlovlexHistoryBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const entry = slovlexHistoryEntries[Number(btn.dataset.idx)];
+      if (!entry || !entry.matches) return;
+      showSlovlexStatus(
+        `Zobrazujem uložený výsledok z ${formatHistoryDate(entry.started_at)}: ` +
+        `${entry.materials_checked ?? "-"} záznamov, ${entry.matches.length} zhôd.`,
+        "info"
+      );
+      renderSlovlexMatches(entry.matches);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+}
+
+async function loadSlovlexHistory() {
+  try {
+    const resp = await fetch(`${API_BASE}/api/slovlex/history`);
+    if (!resp.ok) return;
+    slovlexHistoryEntries = await resp.json();
+    renderSlovlexHistory();
+  } catch (err) {
+    // Silently ignore -- e.g. backend not running yet on initial page load.
+  }
+}
+
+document.getElementById("slovlexClearHistoryBtn").addEventListener("click", async () => {
+  if (!confirm("Naozaj vymazať celú históriu kontrol Slov-Lexu? Túto akciu nie je možné vrátiť späť.")) {
+    return;
+  }
+  try {
+    const resp = await fetch(`${API_BASE}/api/slovlex/history`, { method: "DELETE" });
+    if (!resp.ok) throw new Error(`Vymazanie zlyhalo (${resp.status})`);
+    slovlexHistoryEntries = [];
+    renderSlovlexHistory();
+  } catch (err) {
+    showSlovlexStatus(`Chyba pri mazaní histórie: ${err.message}`, "error");
+  }
+});
+
+loadSlovlexHistory();
+const tabletToggle = document.getElementById("tabletToggle");
+const tabletBody = document.getElementById("tabletBody");
+const tabletQrBox = document.getElementById("tabletQrBox");
+const tabletUrlText = document.getElementById("tabletUrlText");
+let tabletInfoLoaded = false;
+
+async function loadTabletInfo() {
+  if (tabletInfoLoaded) return;
+  tabletInfoLoaded = true;
+  try {
+    const resp = await fetch(`${API_BASE}/api/tablet-info`);
+    const data = await resp.json();
+    if (!data.available || !data.url) {
+      tabletQrBox.innerHTML = `<span class="qr-msg">Nepodarilo sa zistiť sieťovú adresu.</span>`;
+      tabletUrlText.textContent = "";
+      return;
+    }
+    tabletQrBox.innerHTML = `<img src="${API_BASE}/api/tablet-qr.png" alt="QR kód pre tablet" />`;
+    tabletUrlText.textContent = data.url;
+  } catch (err) {
+    tabletQrBox.innerHTML = `<span class="qr-msg">Server nie je dostupný.</span>`;
+  }
+}
+
+tabletToggle.addEventListener("click", () => {
+  const isOpen = tabletToggle.getAttribute("aria-expanded") === "true";
+  tabletToggle.setAttribute("aria-expanded", String(!isOpen));
+  tabletBody.classList.toggle("hidden", isOpen);
+  if (!isOpen) loadTabletInfo();
+});
+</script>
+</body>
+</html>
