@@ -39,12 +39,26 @@ from auth import PinAuthMiddleware
 from schemas import ExportRequest, MatchResult, ScrapeRequest, ScrapeResponse
 from slovlex_routes import router as slovlex_router
 
+# MPK imports (new)
+try:
+    from mpk_routes import router as mpk_router
+    HAS_MPK = True
+except ImportError:
+    HAS_MPK = False
+    logger_temp = logging.getLogger("nku_extractor.main")
+    logger_temp.warning("MPK routes not available - mpk_routes.py missing or has errors")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("nku_extractor.main")
 
 app = FastAPI(title="NKU Reference Extractor")
 app.add_middleware(PinAuthMiddleware)
 app.include_router(slovlex_router)
+
+# Include MPK router if available
+if HAS_MPK:
+    app.include_router(mpk_router)
+    logger.info("MPK routes registered successfully")
 
 # NOTE: no CORS middleware here on purpose. The frontend is always served
 # by this same backend (mounted at "/" below) -- both when opened locally
@@ -684,7 +698,7 @@ def export_matches(payload: ExportRequest):
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "mpk_available": HAS_MPK}
 
 
 def _get_lan_ip() -> Optional[str]:
@@ -741,4 +755,3 @@ def tablet_qr(request_port: int = 8000):
 _FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 if _FRONTEND_DIR.is_dir():
     app.mount("/", StaticFiles(directory=str(_FRONTEND_DIR), html=True), name="frontend")
-
