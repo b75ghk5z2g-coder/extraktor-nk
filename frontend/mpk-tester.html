@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPK Extraktor - Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status-ok {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-error {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-running {
+            background: #ff9800;
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .output-area {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output-error {
+            color: #d32f2f;
+        }
+
+        .output-success {
+            color: #388e3c;
+        }
+
+        .output-info {
+            color: #1976d2;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+        .results-table th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .results-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .results-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🔍 MPK Extraktor - Web Tester</h1>
+            <p class="subtitle">Testujte MPK API bez terminálu</p>
+            <div id="health-status"></div>
+        </header>
+
+        <div class="grid">
+            <!-- Left Column: Controls -->
+            <div class="card">
+                <h2>⚙️ Nastavenia & Kontrola</h2>
+
+                <!-- Health Check -->
+                <div class="form-group">
+                    <button onclick="checkHealth()">✓ Kontrola servera</button>
+                </div>
+
+                <!-- Search Settings -->
+                <h3 style="margin-top: 20px; margin-bottom: 10px; color: #667eea;">MPK Vyhľadávanie</h3>
+
+                <div class="form-group">
+                    <label>Hľadaný výraz:</label>
+                    <input type="text" id="searchTerm" value="NK" placeholder="NK, NKÚ, Najvyšší...">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="includeVariants" checked>
+                    <label for="includeVariants">Vrátane variantov (NKÚ, Najvyšší kontrolný úrad)</label>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button onclick="startSearch()">🚀 Spustiť vyhľadávanie</button>
+                    <button onclick="checkJobStatus()">📊 Status</button>
+                </div>
+
+                <!-- Test Patterns -->
+                <h3 style="margin-top: 20px; margin-bottom: 10px; color: #667eea;">Test Vzorov</h3>
+
+                <div class="form-group">
+                    <label>Testovací text:</label>
+                    <textarea id="testText" placeholder="Najvyšší kontrolný úrad robí svoju prácu. NK je dôležitá inštitúcia.">Najvyšší kontrolný úrad robí svoju prácu. NK je dôležitá inštitúcia.</textarea>
+                </div>
+
+                <button onclick="testPatterns()">🔬 Test vzorov</button>
+
+                <!-- Export -->
+                <h3 style="margin-top: 20px; margin-bottom: 10px; color: #667eea;">Export</h3>
+
+                <div class="form-group">
+                    <label>Formát:</label>
+                    <select id="exportFormat">
+                        <option value="csv">CSV</option>
+                        <option value="xlsx">Excel (XLSX)</option>
+                    </select>
+                </div>
+
+                <button onclick="exportResults()" id="exportBtn" disabled>📥 Stiahnuť výsledky</button>
+            </div>
+
+            <!-- Right Column: Output -->
+            <div class="card">
+                <h2>📋 Výstup & Výsledky</h2>
+
+                <!-- Progress -->
+                <div id="progressContainer" class="hidden">
+                    <div>
+                        <strong id="progressLabel">Spracovávam...</strong>
+                        <span id="progressPercent" style="float: right;">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <small id="progressDetails" style="color: #666;"></small>
+                </div>
+
+                <!-- Stats -->
+                <div id="statsContainer" class="hidden">
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="stat-label">Procesov nájdených</div>
+                            <div class="stat-value" id="statProcesses">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Dokumentov spracovaných</div>
+                            <div class="stat-value" id="statProcessed">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Chýb</div>
+                            <div class="stat-value" id="statFailed">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Nájdených zápasov</div>
+                            <div class="stat-value" id="statMatches">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Log -->
+                <div class="output-area" id="outputLog">
+Čakám na príkaz...
+                </div>
+
+                <!-- Results Table -->
+                <div id="resultsContainer" class="hidden">
+                    <h3 style="margin-top: 20px; margin-bottom: 10px;">Nájdené zhody:</h3>
+                    <table class="results-table" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Zdroj</th>
+                                <th>Vzor</th>
+                                <th>Nájdený text</th>
+                                <th>Kontext</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "/api";
+        let currentJobId = null;
+        let pollInterval = null;
+        let currentResults = [];
+
+        function log(message, type = "info") {
+            const logElement = document.getElementById("outputLog");
+            const timestamp = new Date().toLocaleTimeString("sk-SK");
+            const prefix = type === "error" ? "❌" : type === "success" ? "✅" : "ℹ️";
+            const className = `output-${type}`;
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${prefix} ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById("outputLog").innerHTML = "";
+        }
+
+        async function checkHealth() {
+            clearLog();
+            log("Kontrolujem server...");
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                if (response.ok) {
+                    log("✓ Server je funkčný", "success");
+                    log(`MPK dostupné: ${data.mpk_available ? "ÁNO" : "NIE"}`, data.mpk_available ? "success" : "error");
+                    document.getElementById("health-status").innerHTML = `
+                        <span class="status-badge status-ok">✓ Server je online</span>
+                        <span class="status-badge ${data.mpk_available ? 'status-ok' : 'status-error'}">
+                            MPK: ${data.mpk_available ? '✓ Dostupné' : '✗ Nedostupné'}
+                        </span>
+                    `;
+                } else {
+                    log("✗ Server neodpovedá", "error");
+                    document.getElementById("health-status").innerHTML = `
+                        <span class="status-badge status-error">✗ Server offline</span>
+                    `;
+                }
+            } catch (e) {
+                log(`Chyba: ${e.message}`, "error");
+                document.getElementById("health-status").innerHTML = `
+                    <span class="status-badge status-error">✗ Chyba pripojenia</span>
+                `;
+            }
+        }
+
+        async function startSearch() {
+            clearLog();
+            const searchTerm = document.getElementById("searchTerm").value || "NK";
+            const includeVariants = document.getElementById("includeVariants").checked;
+
+            log(`Spúšťam vyhľadávanie: "${searchTerm}"...`);
+            log(`Vrátane variantov: ${includeVariants ? "ÁNO" : "NIE"}`);
+
+            try {
+                const response = await fetch(`${API_BASE}/mpk/search/start`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        search_term: searchTerm,
+                        include_variants: includeVariants
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.job_id) {
+                    currentJobId = data.job_id;
+                    log(`Job spustený: ${currentJobId}`, "success");
+                    log("Sledovám pokrok...");
+                    document.getElementById("progressContainer").classList.remove("hidden");
+                    startPolling();
+                } else {
+                    log(`Chyba: ${JSON.stringify(data)}`, "error");
+                }
+            } catch (e) {
+                log(`Chyba siete: ${e.message}`, "error");
+            }
+        }
+
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(checkJobStatus, 2000);
+        }
+
+        async function checkJobStatus() {
+            if (!currentJobId) {
+                log("Nie je spustený žiaden job", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/mpk/search/status/${currentJobId}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const { status, current, total, location, elapsed_seconds, estimated_seconds_remaining, error, result } = data;
+
+                    // Update progress
+                    const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+                    document.getElementById("progressFill").style.width = `${percent}%`;
+                    document.getElementById("progressPercent").textContent = `${percent}%`;
+                    document.getElementById("progressLabel").textContent = location || "Spracovávam...";
+                    document.getElementById("progressDetails").textContent = `${current}/${total} • ${elapsed_seconds}s${estimated_seconds_remaining ? ` • Zostáva ~${estimated_seconds_remaining}s` : ""}`;
+
+                    if (status === "done") {
+                        clearInterval(pollInterval);
+                        log("✓ Vyhľadávanie dokončené!", "success");
+                        document.getElementById("progressContainer").classList.add("hidden");
+
+                        if (result) {
+                            displayResults(result);
+                        }
+                    } else if (status === "error") {
+                        clearInterval(pollInterval);
+                        log(`Chyba: ${error}`, "error");
+                        document.getElementById("progressContainer").classList.add("hidden");
+                    }
+                }
+            } catch (e) {
+                log(`Chyba pri kontrole statusu: ${e.message}`, "error");
+            }
+        }
+
+        function displayResults(result) {
+            log(`Procesov: ${result.processes_found}`, "info");
+            log(`S zhodami: ${result.processes_with_matches}`, "info");
+            log(`Dokumentov spracovaných: ${result.documents_processed.length}`, "success");
+            log(`Chýb: ${result.documents_failed.length}`, result.documents_failed.length > 0 ? "error" : "success");
+            log(`Nájdených zápasov: ${result.matches.length}`, "success");
+
+            currentResults = result.matches;
+            document.getElementById("exportBtn").disabled = result.matches.length === 0;
+
+            // Update stats
+            document.getElementById("statProcesses").textContent = result.processes_found;
+            document.getElementById("statProcessed").textContent = result.documents_processed.length;
+            document.getElementById("statFailed").textContent = result.documents_failed.length;
+            document.getElementById("statMatches").textContent = result.matches.length;
+            document.getElementById("statsContainer").classList.remove("hidden");
+
+            // Display results table
+            if (result.matches.length > 0) {
+                const tbody = document.getElementById("resultsBody");
+                tbody.innerHTML = "";
+                result.matches.forEach(match => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${match.source}</td>
+                        <td>${match.pattern_matched}</td>
+                        <td><strong>${match.matched_text}</strong></td>
+                        <td>${match.context.substring(0, 100)}...</td>
+                    `;
+                });
+                document.getElementById("resultsContainer").classList.remove("hidden");
+            }
+        }
+
+        async function testPatterns() {
+            clearLog();
+            const text = document.getElementById("testText").value;
+            log(`Testujem vzory na: "${text.substring(0, 50)}..."`);
+
+            // Mock response - prípadne by sme volali API
+            const patterns = [
+                { name: "NK_FULL_NAME", regex: /(?i)najvyšš\w*\s+kontroln\w*\s+úrad\w*(\s+S[Rr]\b)?/g },
+                { name: "NK_ACRONYM", regex: /(?<!\w)NK(\s+S[Rr]\b)?(?!\w)/g },
+                { name: "NKU_ACRONYM", regex: /(?<!\w)NKÚ(\s+S[Rr]\b)?(?!\w)/g },
+            ];
+
+            let foundCount = 0;
+            patterns.forEach(pattern => {
+                const matches = text.matchAll(pattern.regex);
+                let match;
+                while ((match = matches.next()) && !match.done) {
+                    foundCount++;
+                    log(`Nájdený ${pattern.name}: "${match.value[0]}"`, "success");
+                }
+            });
+
+            if (foundCount === 0) {
+                log("Žiadne zápasy sa nenašli", "info");
+            } else {
+                log(`Celkem ${foundCount} zápasov`, "success");
+            }
+        }
+
+        async function exportResults() {
+            if (currentResults.length === 0) {
+                log("Žiadne výsledky na export", "error");
+                return;
+            }
+
+            const format = document.getElementById("exportFormat").value;
+            log(`Exportujem ${currentResults.length} zápasov ako ${format.toUpperCase()}...`);
+
+            try {
+                const response = await fetch(`${API_BASE}/mpk/export`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        matches: currentResults,
+                        file_format: format
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `mpk_vysledky.${format === "csv" ? "csv" : "xlsx"}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    log(`Súbor stiahnutý!`, "success");
+                } else {
+                    log(`Chyba exportu: ${response.statusText}`, "error");
+                }
+            } catch (e) {
+                log(`Chyba: ${e.message}`, "error");
+            }
+        }
+
+        // Auto check health on load
+        window.addEventListener("load", () => {
+            setTimeout(checkHealth, 500);
+        });
+    </script>
+</body>
+</html>
